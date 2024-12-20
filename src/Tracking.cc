@@ -1539,11 +1539,17 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
             cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
     }
 
-    if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
+    
+    // if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
+    if(imDepth.type()!=CV_32F)
+    {
         imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
+        cout<<" imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);"<<endl;
+    }
+        
 
     imDepth.copyTo(mImD);
-
+    // cout<<"mDepthMapFactor = "<<mDepthMapFactor<<" "<<"imDepth.tpye = "<<imDepth.type()<<endl;
     if (mSensor == System::RGBD)
         mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     else if(mSensor == System::IMU_RGBD)
@@ -3217,12 +3223,13 @@ bool Tracking::NeedNewKeyFrame()
 
 void Tracking::CreateNewKeyFrame()
 {
+    // 1. 判断是否需要生成新的关键帧
     if(mpLocalMapper->IsInitializing() && !mpAtlas->isImuInitialized())
         return;
 
     if(!mpLocalMapper->SetNotStop(true))
         return;
-
+    // 2. 初始化新关键帧
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
@@ -3231,7 +3238,7 @@ void Tracking::CreateNewKeyFrame()
     pKF->SetNewBias(mCurrentFrame.mImuBias);
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
-
+    // 3. 关联新关键帧与上一关键帧
     if(mpLastKeyFrame)
     {
         pKF->mPrevKF = mpLastKeyFrame;
@@ -3241,11 +3248,12 @@ void Tracking::CreateNewKeyFrame()
         Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
 
     // Reset preintegration from last KF (Create new object)
+    // 4. IMU 数据预积分
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
         mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(),pKF->mImuCalib);
     }
-
+    // 5. 基于深度信息生成地图点
     if(mSensor!=System::MONOCULAR && mSensor != System::IMU_MONOCULAR) // TODO check if incluide imu_stereo
     {
         mCurrentFrame.UpdatePoseMatrices();
@@ -3333,13 +3341,15 @@ void Tracking::CreateNewKeyFrame()
         }
     }
 
-
+    // 6. 插入关键帧到局部地图线程
     mpLocalMapper->InsertKeyFrame(pKF);
 
     mpLocalMapper->SetNotStop(false);
 
-    if (mSensor == System::RGBD)
+    if (mSensor == System::RGBD){
         mpSlamDataPub->getPointCloudMapping()->insertKeyFrame(pKF, mImRGB, mImD, mK, mDistCoef);
+    }
+        
     
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;

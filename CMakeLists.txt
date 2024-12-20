@@ -2,15 +2,15 @@ cmake_minimum_required(VERSION 2.8)
 project(orb_slam3)
 
 IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Release)
+  SET(CMAKE_BUILD_TYPE Debug)
 ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ")
 
 # Check C++14 or C++0x support
 include(CheckCXXCompilerFlag)
@@ -69,7 +69,7 @@ find_package(Eigen3 3.3.7 REQUIRED)
 
 find_package(Pangolin REQUIRED)
 find_package(realsense2)
-find_package( PCL 1.13.0 REQUIRED )
+find_package( PCL 1.10.0 REQUIRED )
 
 
 include_directories(
@@ -188,6 +188,12 @@ ${PROJECT_NAME}
 add_executable(ros_rgbd_mapping
         Examples/ROS/ros_rgbd_mapping.cc)
 target_link_libraries(ros_rgbd_mapping 
+${PROJECT_NAME}
+)
+
+add_executable(ros_rgbd_mapping_1
+        Examples/ROS/ros_rgbd_mapping_1.cc)
+target_link_libraries(ros_rgbd_mapping_1
 ${PROJECT_NAME}
 )
 

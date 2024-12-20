@@ -23,6 +23,8 @@ SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *
     mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), mpAtlas(pAtlas),
     mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false)
 {
+
+    ROS_ERROR("SlamDataPub::SlamDataPub ....init");
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
     float fps = fSettings["Camera.fps"];
@@ -97,6 +99,27 @@ void SlamDataPub::TrackingDataPub()
             GetCurrentROSCameraMatrix(camPose2Ground);
             GetCurrentROSVehicleMatrix(vehiclePose2Ground);
             GetCurrentROSTrajectories(cameraPath, vehiclePath);
+            // // 打印相机位姿
+            // ROS_INFO("Camera Pose: [x: %f, y: %f, z: %f]", 
+            //             camPose2Ground.pose.position.x, 
+            //             camPose2Ground.pose.position.y, 
+            //             camPose2Ground.pose.position.z);
+            // ROS_INFO("Orientation: [x: %f, y: %f, z: %f, w: %f]",
+            //             camPose2Ground.pose.orientation.x,
+            //             camPose2Ground.pose.orientation.y,
+            //             camPose2Ground.pose.orientation.z,
+            //             camPose2Ground.pose.orientation.w);
+
+            // // 打印车辆位姿
+            // ROS_INFO("Vehicle Pose: [x: %f, y: %f, z: %f]",
+            //             vehiclePose2Ground.pose.position.x, 
+            //             vehiclePose2Ground.pose.position.y, 
+            //             vehiclePose2Ground.pose.position.z);
+            // ROS_INFO("Orientation: [x: %f, y: %f, z: %f, w: %f]",
+            //             vehiclePose2Ground.pose.orientation.x,
+            //             vehiclePose2Ground.pose.orientation.y,
+            //             vehiclePose2Ground.pose.orientation.z,
+            //             vehiclePose2Ground.pose.orientation.w);
             CamPose_pub_.publish(camPose2Ground);  
             VehiclePose_pub_.publish(vehiclePose2Ground);
             CamPath_pub_.publish(cameraPath);   // KeyFrames
@@ -136,6 +159,7 @@ void SlamDataPub::PointCloudPub()
             GetCurrentROSAllPointCloud(allMapPoints, referenceMapPoints);
             AllPointCloud_pub_.publish(allMapPoints);
             RefPointCloud_pub_.publish(referenceMapPoints);
+
             mbGetPointCloud = false;
         }
 	    if(CheckFinish())
@@ -152,7 +176,6 @@ void SlamDataPub::CloudPointMappingPub()
     {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr globalCloud( new pcl::PointCloud<pcl::PointXYZRGB> );  
         mpPointCloudMapping->generatePointCloud(globalCloud, mpAtlas, mTrans_cam2ground);
-        //cout << "globalCloud->points.size()=" << globalCloud->points.size() << endl;
         if (globalCloud->points.size() > 0)
         {
             pcl::PCLPointCloud2 pcl_pc1;
@@ -161,14 +184,14 @@ void SlamDataPub::CloudPointMappingPub()
             allMapPoints.header.frame_id = "ground";  
             allMapPoints.header.stamp = ros::Time::now();  
 
-            //cout << "globalCloud->points.size()=" << globalCloud->points.size() << endl;
+            cout << "222222222222globalCloud->points.size()=" << globalCloud->points.size() << endl;
             CloudPoint_pub_.publish(allMapPoints);
         }
 
         if(CheckFinish())
             break;  
         usleep(mT*1000 / 2); 
-        //cout << "CloudPointMappingPub end" << endl;
+        // cout << "CloudPointMappingPub end" << endl;
     }
 }
 
@@ -221,6 +244,7 @@ void SlamDataPub::Run()
  
     threadPointCloudPub.join();
     threadCamPosePub.join(); 
+    // threadCloudPointMappingPub.join();
     
     SetFinish();
 }

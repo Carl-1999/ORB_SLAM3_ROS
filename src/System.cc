@@ -339,7 +339,6 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
         exit(-1);
     }
-
     cv::Mat imToFeed = im.clone();
     cv::Mat imDepthToFeed = depthmap.clone();
     if(settings_ && settings_->needToResize()){
@@ -1558,7 +1557,12 @@ string System::CalculateCheckSum(string filename, int type)
 //zl-20170622
 void System::GetCurrentTrajectory(vector<cv::Mat> &currentTrajectory)
 {
+
     vector<KeyFrame*> vpKFs = mpAtlas->GetAllKeyFrames();
+    if (vpKFs.empty()) {
+    ROS_WARN("No keyframes available to generate trajectory.");
+    return;
+    }
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.

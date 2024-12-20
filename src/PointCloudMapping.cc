@@ -4,7 +4,8 @@
 namespace ORB_SLAM3 {
 
 PointCloudData::PointCloudData(){
-    cloud = std::make_shared<PointCloud>();
+    // cloud = std::make_shared<PointCloud>();
+    cloud = boost::make_shared<PointCloud>();
 }
 
 PointCloudData::~PointCloudData()
@@ -28,7 +29,7 @@ void PointCloudMapping::insertKeyFrame(KeyFrame* kf, const cv::Mat& color, const
     
     std::vector<cv::KeyPoint> mvKeys;
     std::vector<cv::KeyPoint> mvKeysUn;
-    int stride = 6;
+    int stride = 4;
     for (int i = 0; i < color.rows; i += stride)
     {
         for (int j = 0; j < color.cols; j+= stride)
@@ -65,11 +66,12 @@ void PointCloudMapping::insertKeyFrame(KeyFrame* kf, const cv::Mat& color, const
     {
         for ( int n=0; n<depth.cols; n+=stride )
         {
+            
             float d = depth.ptr<float>(m)[n];
             v_min = v_min > d ? d : v_min; 
             v_max = v_max > d ? v_max : isnan(d) ? v_max : d;
-
-            if (isnan(d) || d < 0.01 || d>10)
+            // cout<<"d = "<<d<<"  ";
+            if (isnan(d) || d < 0.01 || d>5)
             {
                 cnt += 1;
                 continue;
@@ -92,8 +94,7 @@ void PointCloudMapping::insertKeyFrame(KeyFrame* kf, const cv::Mat& color, const
             cnt += 1;
         }
     }
-
-    //cout << "v_max=" << v_max << ", v_min=" << v_min << endl; 
+    // cout<<"points.size()"<<cloud->points.size()<<"v_max=" << v_max << ", v_min=" << v_min<<endl;
 
     cloud->width = cloud->points.size();
     cloud->height = 1;
@@ -105,43 +106,54 @@ void PointCloudMapping::insertKeyFrame(KeyFrame* kf, const cv::Mat& color, const
     mPointCloudDatas.push_back(pcd);
     mbUpdateCloudPoint = true;
 
-    //cout << "insert cloud" << endl;
+    cout << "insert cloud cloud->points.size()" << cloud->points.size() << endl;
+    // v_max=0.295, v_min=0
 
 }
 
 
 void PointCloudMapping::generatePointCloud(PointCloud::Ptr& GlobalCloud, Atlas* pAtlas, Eigen::Matrix4f& Trans_cam2ground)
-{ 
+{
 
+    //  检查是否需要更新点云
+    // cout<<"mbUpdateCloudPoint = "<<mbUpdateCloudPoint<<endl;
     if (!mbUpdateCloudPoint)
         return; 
 
     const vector<KeyFrame*> vpKFs = pAtlas->GetAllKeyFrames();
+    cout<<"vpKFs.size()"<<vpKFs.size()<<endl;
     std::set<long unsigned int> sKFs;
     for (auto kf : vpKFs)
     {
         sKFs.insert(kf->mnFrameId);
+        // cout<<"kf->mnFrameId ="<<kf->mnFrameId<<endl;
     }
 
     std::unique_lock<std::mutex> locker(mPointCloudMtx);   
     
     for (auto pcd : mPointCloudDatas)
     {
-        if (sKFs.find(pcd.kf->mnFrameId) == sKFs.end())
-            continue; 
-        
-        Eigen::Isometry3d T = Converter::toSE3Quat( pcd.kf->GetPoseInverse() );
-        PointCloud::Ptr cloud(new PointCloud);
-        pcl::transformPointCloud(*pcd.cloud, *cloud, T.matrix()); 
-        
-        T = Converter::toSE3Quat(Converter::toCvMat(Trans_cam2ground));
+        if(pcd.cloud->points.size() != 0){
+            if (sKFs.find(pcd.kf->mnFrameId) == sKFs.end())
+                continue;
+            
+            Eigen::Isometry3d T = Converter::toSE3Quat( pcd.kf->GetPoseInverse());
+            PointCloud::Ptr cloud(new PointCloud);
+            pcl::transformPointCloud(*pcd.cloud, *cloud, T.matrix()); 
+            
+            T = Converter::toSE3Quat(Converter::toCvMat(Trans_cam2ground));
 
-        PointCloud::Ptr cloud1(new PointCloud);
-        pcl::transformPointCloud(*cloud, *cloud1, T.matrix()); 
+            PointCloud::Ptr cloud1(new PointCloud);
+            pcl::transformPointCloud(*cloud, *cloud1, T.matrix()); 
 
-        *GlobalCloud += *cloud1;
+            *GlobalCloud += *cloud1;
+        }else{
+            cout<<"3d reconstruction no points"<<endl;
+        }
+
     }
-
+    // 为什么这里生成的点云是0呢？用rosbag的方法播放
+    cout<<"GlobalCloud size = "<<GlobalCloud->points.size()<<endl;
     mbUpdateCloudPoint = false;
 
 }

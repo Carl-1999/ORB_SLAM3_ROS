@@ -108,16 +108,16 @@ int main(int argc, char **argv)
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), rgb_sub,depth_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabRGBD,&igb,_1,_2));
 
-    image_transport::ImageTransport img_(nh);
-    image_transport::Publisher imgPub;
-    imgPub = img_.advertise("/camera/rgb/image_color", 1);
+    // image_transport::ImageTransport img_(nh);
+    // image_transport::Publisher imgPub;
+    // imgPub = img_.advertise("/camera/rgb/image_color", 1);
 
-    image_transport::ImageTransport dep_(nh);
-    image_transport::Publisher depPub;
-    depPub = dep_.advertise("/camera/depth/image", 1);
+    // image_transport::ImageTransport dep_(nh);
+    // image_transport::Publisher depPub;
+    // depPub = dep_.advertise("/camera/depth/image", 1);
 
-    ImagePub ipub(&SLAM, strSeq, imgPub, depPub);
-    ipub.PubliserImages();
+    // ImagePub ipub(&SLAM, strSeq, imgPub, depPub);
+    // ipub.PubliserImages();
 
     ros::spin();
     // Stop all threads
@@ -134,9 +134,10 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msgs::ImageConstPtr& msgD)
 {   
-    cout<<"GrabRGBD"<<endl;
+    // ROS_INFO("Depth image encoding: %s", msgD->encoding.c_str());
 
-    // Copy the ros image message to cv::Mat.
+
+
     cv_bridge::CvImageConstPtr cv_ptrRGB;
     try
     {
@@ -144,60 +145,59 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
     }
     catch (cv_bridge::Exception& e)
     {
-        ROS_ERROR("cv_bridge exception: %s in image", e.what());
+        ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
 
-    cv_bridge::CvImagePtr cv_ptrD;
+    cv_bridge::CvImageConstPtr cv_ptrD;
     try
     {
-        cv_ptrD = cv_bridge::toCvCopy(msgD, sensor_msgs::image_encodings::MONO16); 
+        cv_ptrD = cv_bridge::toCvShare(msgD);
     }
     catch (cv_bridge::Exception& e)
     {
-        ROS_ERROR("cv_bridge exception: %s in depth", e.what());
+        ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-
-
-
-    // cv_bridge::CvImageConstPtr cv_ptrRGB;
-    // try
-    // {
-    //     cv_ptrRGB = cv_bridge::toCvShare(msgRGB);
-    // }
-    // catch (cv_bridge::Exception& e)
-    // {
-    //     ROS_ERROR("cv_bridge exception: %s", e.what());
-    //     return;
-    // }
-
-    // cv_bridge::CvImageConstPtr cv_ptrD;
-    // try
-    // {
-    //     cv_ptrD = cv_bridge::toCvShare(msgD);
-    // }
-    // catch (cv_bridge::Exception& e)
-    // {
-    //     ROS_ERROR("cv_bridge exception: %s", e.what());
-    //     return;
-    // }
-    // cout<<cv_ptrD->image.type()<<endl;
+    float d = cv_ptrD->image.ptr<float>(300)[300];
     double minVal, maxVal;
     cv::minMaxLoc(cv_ptrD->image, &minVal, &maxVal);
-    // cout << "Depth range: [" << minVal << ", " << maxVal << "] meters" << endl;
-    // cout<<cv_ptrD->image.type()<<" "<< "cv_ptrD->image.at<uint16_t>(300, 300)"<<cv_ptrD->image.at<uint16_t>(300, 300)<<endl;
-    float d = 0.0;  // 用于存储当前深度值
-    if (cv_ptrD->image.type() == CV_16UC1)  // 16位无符号整数
-    {
-        d = cv_ptrD->image.at<uint16_t>(300, 300) * 0.001f; // 转换为米（假设深度值单位是毫米）
-    }
-    else if (cv_ptrD->image.type() == CV_32FC1)  // 32位浮点数
-    {
-        d = cv_ptrD->image.at<float>(300, 300);
-    }
-    // cout<<"D = "<<d;
+    cout << "Depth range: [" << minVal << ", " << maxVal << "] meters  "<<"image type = "<<cv_ptrD->image.type()<<"  "<<"(300,300) = "<<d<< endl;
+    // // 原始深度图像
+    // cv::Mat depth_image = cv_ptrD->image;
+    // cv::Mat depth_image_converted;
 
+    // // 检查当前深度图类型并进行转换到 CV_16UC1
+    // if (depth_image.type() == CV_32FC1)
+    // {
+    //     // 将32位浮点数的深度图转换为16位无符号整数深度图，单位转换为毫米
+    //     depth_image.convertTo(depth_image_converted, CV_16UC1, 1000.0); // 乘以1000转换到毫米
+    // }
+    // else if (depth_image.type() == CV_16UC1)
+    // {
+    //     // 如果已经是 CV_16UC1 类型，直接复制
+    //     depth_image_converted = depth_image.clone();
+    // }
+    // else
+    // {
+    //     ROS_ERROR("Unsupported depth image type: %d", depth_image.type());
+    //     return;
+    // }
+
+    // d = depth_image_converted.ptr<float>(300)[300];
+
+    // // 调试代码
+    // cv::minMaxLoc(depth_image_converted, &minVal, &maxVal);
+    // cout << "Depth range: [" << minVal << ", " << maxVal << "] meters  " <<"depth_image_converted.type()"<<depth_image_converted.type()<< "  "<<"(300,300) = "<<d<< endl;
+    // if (cv_ptrD->image.type() == CV_16UC1)  // 16位无符号整数
+    // {
+    //     d = depth_image_converted.at<uint16_t>(300, 300) * 0.001f; // 转换为米（假设深度值单位是毫米）
+    // }
+    // else if (cv_ptrD->image.type() == CV_32FC1)  // 32位浮点数
+    // {
+    //     d = depth_image_converted.at<float>(300, 300);
+    // }
+    
     mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec());
 
 }
@@ -244,7 +244,7 @@ void ImagePub::LoadImages()
 void ImagePub::PubliserImages()
 {
     int cnt = 0;
-    ros::Rate loop_rate(20);
+    ros::Rate loop_rate(10);
     cv_bridge::CvImage cviImg;
     cv_bridge::CvImage cviDepth;
 
@@ -271,7 +271,7 @@ void ImagePub::PubliserImages()
 
         cv::Mat depth = cv::imread(vstrDepFilenames[cnt], cv::IMREAD_UNCHANGED);
         
-        cout << "img.type()=" << img.type() << ", depth.size()=" << depth.size() << ", depth.type()=" << depth.type() << ", depth.channels()=" << depth.channels() << endl; 
+        //cout << "img.type()=" << img.type() << ", depth.size()=" << depth.size() << ", depth.type()=" << depth.type() << ", depth.channels()=" << depth.channels() << endl; 
         //cout << sensor_msgs::image_encodings::MONO16 << endl; 
 
         if(depth.empty())
