@@ -178,6 +178,12 @@ target_link_libraries(ros_mono
 ${PROJECT_NAME}
 )
 
+add_executable(ros_mono_gazebo
+        Examples/ROS/ros_mono_gazebo.cc)
+target_link_libraries(ros_mono_gazebo
+${PROJECT_NAME}
+)
+
 add_executable(ros_stereo
         Examples/ROS/ros_stereo.cc)
 target_link_libraries(ros_stereo 

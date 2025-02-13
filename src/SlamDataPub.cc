@@ -99,27 +99,27 @@ void SlamDataPub::TrackingDataPub()
             GetCurrentROSCameraMatrix(camPose2Ground);
             GetCurrentROSVehicleMatrix(vehiclePose2Ground);
             GetCurrentROSTrajectories(cameraPath, vehiclePath);
-            // // 打印相机位姿
-            // ROS_INFO("Camera Pose: [x: %f, y: %f, z: %f]", 
-            //             camPose2Ground.pose.position.x, 
-            //             camPose2Ground.pose.position.y, 
-            //             camPose2Ground.pose.position.z);
-            // ROS_INFO("Orientation: [x: %f, y: %f, z: %f, w: %f]",
-            //             camPose2Ground.pose.orientation.x,
-            //             camPose2Ground.pose.orientation.y,
-            //             camPose2Ground.pose.orientation.z,
-            //             camPose2Ground.pose.orientation.w);
+            // 打印相机位姿
+            ROS_INFO("Camera Pose: [x: %f, y: %f, z: %f]", 
+                        camPose2Ground.pose.position.x, 
+                        camPose2Ground.pose.position.y, 
+                        camPose2Ground.pose.position.z);
+            ROS_INFO("Orientation: [x: %f, y: %f, z: %f, w: %f]",
+                        camPose2Ground.pose.orientation.x,
+                        camPose2Ground.pose.orientation.y,
+                        camPose2Ground.pose.orientation.z,
+                        camPose2Ground.pose.orientation.w);
 
-            // // 打印车辆位姿
-            // ROS_INFO("Vehicle Pose: [x: %f, y: %f, z: %f]",
-            //             vehiclePose2Ground.pose.position.x, 
-            //             vehiclePose2Ground.pose.position.y, 
-            //             vehiclePose2Ground.pose.position.z);
-            // ROS_INFO("Orientation: [x: %f, y: %f, z: %f, w: %f]",
-            //             vehiclePose2Ground.pose.orientation.x,
-            //             vehiclePose2Ground.pose.orientation.y,
-            //             vehiclePose2Ground.pose.orientation.z,
-            //             vehiclePose2Ground.pose.orientation.w);
+            // 打印车辆位姿
+            ROS_INFO("Vehicle Pose: [x: %f, y: %f, z: %f]",
+                        vehiclePose2Ground.pose.position.x, 
+                        vehiclePose2Ground.pose.position.y, 
+                        vehiclePose2Ground.pose.position.z);
+            ROS_INFO("Orientation: [x: %f, y: %f, z: %f, w: %f]",
+                        vehiclePose2Ground.pose.orientation.x,
+                        vehiclePose2Ground.pose.orientation.y,
+                        vehiclePose2Ground.pose.orientation.z,
+                        vehiclePose2Ground.pose.orientation.w);
             CamPose_pub_.publish(camPose2Ground);  
             VehiclePose_pub_.publish(vehiclePose2Ground);
             CamPath_pub_.publish(cameraPath);   // KeyFrames

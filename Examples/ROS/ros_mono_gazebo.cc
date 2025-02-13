@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
     // 创建 ImageGrabber 实例并订阅图像话题
     ImageGrabber igb(&SLAM, nodeHandler);
-    ros::Subscriber sub = nodeHandler.subscribe("/camera/rgb/image_color", 1, &ImageGrabber::GrabImage, &igb);
+    ros::Subscriber sub = nodeHandler.subscribe("/camera/rgb/image_raw", 1, &ImageGrabber::GrabImage, &igb);
 
     ros::spin();
 
@@ -128,4 +128,5 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 
     // 发布图像消息
     image_pub.publish(processed_image);
+    std::cout<<"GrabImage"<<endl;
 }
